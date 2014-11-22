@@ -5,8 +5,9 @@ namespace DevelopmentWithADot.AspNetPicker.Test
 {
     public class Global : HttpApplication
     {
-        void Application_Start(object sender, EventArgs e)
+        void Application_Error(object sender, EventArgs e)
         {
+	        e.ToString();
         }
     }
 }

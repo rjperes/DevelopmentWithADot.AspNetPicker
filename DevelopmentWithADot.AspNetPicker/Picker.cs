@@ -8,6 +8,9 @@ using System.Web.UI.WebControls;
 
 namespace DevelopmentWithADot.AspNetPicker
 {
+	using System.Collections.Specialized;
+	using System.Reflection;
+
 	public sealed class PopulateTreeNodeEventArgs : EventArgs
 	{
 		public PopulateTreeNodeEventArgs(TreeNode node)
@@ -23,40 +26,6 @@ namespace DevelopmentWithADot.AspNetPicker
 
 		public Boolean CanHaveChildren { get; set; }
 	}
-
-	/*class PickerTreeNode : TreeNode
-	{
-		public PickerTreeNode(String text, String value, String imageUrl) : base(text, value, imageUrl)
-		{
-		}
-
-		public String OnNodeClientClick { get; set; }
-
-		protected override void RenderPostText(HtmlTextWriter writer)
-		{
-			if (String.IsNullOrWhiteSpace(this.OnNodeClientClick) == false)
-			{
-				var attributesList = writer.GetType().GetField("_attrList", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(writer) as IList;
-
-				foreach (var attribute in attributesList)
-				{
-					var key = attribute.GetType().GetField("key").GetValue(attribute).ToString();
-					var valueProperty = attribute.GetType().GetField("value");
-					var value = valueProperty.GetValue(attribute) as String;
-
-					if (key == HtmlTextWriterAttribute.Href.ToString())
-					{
-						value = String.Concat("javascript:", this.OnNodeClientClick, ";", value.Substring("javascript:".Length));
-						//valueProperty.SetValue(attribute, value);
-						writer.AddAttribute(HtmlTextWriterAttribute.Href.ToString().ToLower(), value);
-						break;
-					}
-				}
-			}
-
-			base.RenderPostText(writer);
-		}
-	}*/
 
 	public class Picker : WebControl, INamingContainer
 	{
@@ -389,7 +358,10 @@ namespace DevelopmentWithADot.AspNetPicker
 				for (var parent = node; parent != null; parent = parent.Parent)
 				{
 					parent.Expanded = true;
-					parent.PopulateOnDemand = false;
+					if (parent.ChildNodes.Count == 0)
+					{
+						parent.PopulateOnDemand = false;
+					}
 				}
 
 				this.image.ImageUrl = node.ImageUrl;
@@ -432,7 +404,7 @@ namespace DevelopmentWithADot.AspNetPicker
 			this.Page.ClientScript.RegisterStartupScript(this.GetType(), this.UniqueID + "getSelectedValue", String.Format("Sys.WebForms.PageRequestManager.getInstance().add_pageLoaded(function() {{ document.getElementById('{0}').getSelectedValue = function() {{ var h = document.getElementById(document.getElementById('{1}_SelectedNode').value); if (!h) {{ return null }} else {{ var i = h.href.lastIndexOf('\\\\'); return h.href.substr(i + 1, h.href.length - i - 3) }} }} }});\n", this.ClientID, this.tree.ClientID), true);
 			this.Page.ClientScript.RegisterStartupScript(this.GetType(), this.UniqueID + "getSelectedText", String.Format("Sys.WebForms.PageRequestManager.getInstance().add_pageLoaded(function() {{ document.getElementById('{0}').getSelectedText = function() {{ var h = document.getElementById(document.getElementById('{1}_SelectedNode').value); if (!h) {{ return null }} else {{ return h.innerHTML }}  }} }});\n", this.ClientID, this.tree.ClientID), true);
 			this.Page.ClientScript.RegisterStartupScript(this.GetType(), this.UniqueID + "getCheckedNodes", String.Format("Sys.WebForms.PageRequestManager.getInstance().add_pageLoaded(function() {{ document.getElementById('{0}').getCheckedNodes = function() {{ return document.querySelectorAll('input[type=checkbox][id^={1}]:checked') }} }});\n", this.ClientID, this.tree.ClientID), true);
-			this.Page.ClientScript.RegisterStartupScript(this.GetType(), this.UniqueID + "selectNode", String.Format("Sys.WebForms.PageRequestManager.getInstance().add_pageLoaded(function() {{ document.getElementById('{0}').selectNode = function(valuePath) {{ var arg = 's' + valuePath.replace(/\\//g, '\\\\\'); __doPostBack('{1}', arg) }} }});\n", this.ClientID, this.tree.UniqueID), true);
+			this.Page.ClientScript.RegisterStartupScript(this.GetType(), this.UniqueID + "selectNode", String.Format("Sys.WebForms.PageRequestManager.getInstance().add_pageLoaded(function() {{ document.getElementById('{0}').selectNode = function(valuePath) {{ var arg = 's' + valuePath.replace(/\\//g, '\\\\'); __doPostBack('{1}', arg) }} }});\n", this.ClientID, this.tree.UniqueID), true);
 		
 			base.CreateChildControls();
 		}
@@ -441,6 +413,11 @@ namespace DevelopmentWithADot.AspNetPicker
 		{
 			if (this.Page.IsPostBack == true)
 			{
+				if (String.IsNullOrWhiteSpace(this.Context.Request.Form["__EVENTARGUMENT"]) == false)
+				{
+					this.SelectNode(this.Context.Request.Form["__EVENTARGUMENT"].Substring(1).Replace('\\', this.PathSeparator));
+				}
+
 				var selectedNode = this.tree.SelectedNode;
 
 				if (selectedNode != null)

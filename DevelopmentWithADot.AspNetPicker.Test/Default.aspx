@@ -40,7 +40,7 @@
 					<asp:Button runat="server" Text="Test" OnClick="OnClick" />
 					<asp:TextBox runat="server" ID="path"/>
 					<asp:Button runat="server" Text="Select" OnClick="OnSelectClick" />
-					<button onclick="test(); return false;">Get Selected Value</button>
+					<button onclick="test(); return false;" name="get">Get Selected Value</button>
 				</ContentTemplate>
 			</asp:UpdatePanel>
 		</form>
